@@ -1,1 +1,1 @@
-My first github
+My first GitHub practice
