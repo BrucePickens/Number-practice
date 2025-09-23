@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Memory Trainer (0–99)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Number Memory Trainer (0–99)</h1>
+
+<!-- Section 1 -->
+<div id="flashDisplay"></div>
+
+<div class="section">
+  <label class="label">How many numbers in the sequence?</label>
+  <input type="number" id="numCount" min="1" value="5">
+  <button id="startBtn">Start Sequence</button>
+  <label><input type="checkbox" id="backwardCheck"> Recall Backwards</label>
+  <label><input type="checkbox" id="manualStart"> Manual Start</label>
+  <label><input type="checkbox" id="voiceCheck"> Enable Voice</label>
+  <br>
+  <label><input type="checkbox" id="allowRepeats"> Allow Repeats</label>
+  <label><input type="checkbox" id="noRepeats"> No Repeats Until Cycle</label>
+  <br>
+  <label>Number Range:
+    <select id="sequenceRangeSelect"></select>
+  </label>
+</div>
+
+<div class="section">
+  <label class="label">Pause between numbers (speech) seconds:</label>
+  <input type="range" id="pauseSlider" min="0.5" max="8" step="0.1" value="3" oninput="pauseValue.innerText=this.value">
+  <span id="pauseValue">3</span>
+</div>
+
+<div class="section">
+  <label class="label">Flash duration / time between numbers (seconds):</label>
+  <input type="range" id="flashSlider" min="0.5" max="8" step="0.1" value="1" oninput="flashValue.innerText=this.value">
+  <span id="flashValue">1</span>
+</div>
+
+<div class="section">
+  <label class="label">Forward Recall:</label>
+  <input type="text" id="forwardInput" placeholder="Type numbers in sequence (e.g. 2528)">
+  <button id="checkForward">Check Forward</button>
+  <div id="forwardResult" class="result"></div>
+</div>
+
+<div class="section">
+  <label class="label">Backward Recall (true digit reversal):</label>
+  <input type="text" id="backwardInput" placeholder="Type numbers in reverse order of digits (e.g. 6352)">
+  <button id="checkBackward">Check Backward</button>
+  <div id="backwardResult" class="result"></div>
+</div>
+
+<div class="section">
+  <label class="label">Partial Recall (last N sets):</label>
+  <input type="number" id="partialCount" min="1" value="2">
+  <br><br>
+  <input type="text" id="partialInputForward" placeholder="Type forward order">
+  <button id="checkPartialForward">Check Forward</button>
+  <div id="partialResultForward" class="result"></div>
+  <br>
+  <input type="text" id="partialInputBackward" placeholder="Type backward order">
+  <button id="checkPartialBackward">Check Backward</button>
+  <div id="partialResultBackward" class="result"></div>
+  <br>
+  <button id="clearHistory">Clear History</button>
+</div>
+
+<!-- Section 2 -->
+<h3>2. Edit Words (Major System)</h3>
+<div id="editWordsGroups"></div>
+<button id="exportBtn">Export to File</button>
+
+<!-- Section 3 -->
+<h2>3. Flashing Practice Mode</h2>
+<label><input type="checkbox" id="flashingToggle"> Enable Flashing Practice</label>
+<br>
+<label>Speed: 
+<input type="range" id="flashingSpeed" min="500" max="5000" step="100" value="2000">
+</label>
+<br>
+<label>Number Range: 
+<select id="flashRangeSelect"></select>
+</label>
+<br>
+<label><input type="checkbox" id="flashNoRepeats"> No Repeats Until Cycle</label>
+
+<div id="flashingPracticeDisplay"></div>
+<div id="flashingWords"></div>
+
+<script src="main.js"></script>
+</body>
+</html>
