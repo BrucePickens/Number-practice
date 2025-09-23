@@ -1,0 +1,31 @@
+/* Flashing display number */
+#flashDisplay, #flashingPracticeDisplay {
+    font-size: 80px;        /* large number */
+    font-weight: bold;
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* Flashing word below the number */
+#flashingWords {
+    font-size: 32px;        /* smaller than the number */
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#flashDisplay {
+    font-size: 3em;          /* make numbers big */
+    font-weight: bold;       /* bold */
+    text-align: center;      /* center text inside the div */
+    position: fixed;         /* fix position on screen */
+    top: 30%;                /* vertical position */
+    left: 50%;               /* horizontal center */
+    transform: translate(-50%, -50%); /* truly center */
+    z-index: 9999;           /* appear above everything */
+    background-color: rgba(255,255,255,0.8); /* optional: semi-transparent box */
+    padding: 20px;           /* spacing around number */
+    border-radius: 10px;     /* rounded edges */
+    min-width: 100px;        /* keep space so it doesn't jump */
+    text-shadow: 2px 2px 5px #000; /* optional: easier to read */
+}

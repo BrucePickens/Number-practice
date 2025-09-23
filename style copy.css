@@ -1,0 +1,15 @@
+/* Flashing display number */
+#flashDisplay, #flashingPracticeDisplay {
+    font-size: 80px;        /* large number */
+    font-weight: bold;
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* Flashing word below the number */
+#flashingWords {
+    font-size: 32px;        /* smaller than the number */
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
