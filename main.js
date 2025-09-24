@@ -1,10 +1,10 @@
-// main.js - replacement (paste this over your existing file)
+// main.js - corrected full version
 
 let history = [];
 let lastSequence = [];
-let numberWords = {};         // object keyed by "0","00","01",... "99"
-let trainerRefPool = [];      // persistent ref pool for no-repeat mode (trainer)
-let flashRefPool = [];        // persistent ref pool for no-repeat mode (flashing)
+let numberWords = {};
+let trainerRefPool = [];
+let flashRefPool = [];
 let flashingInterval = null;
 let lastFlashRange = null;
 
@@ -15,7 +15,6 @@ async function loadNumberWords(){
     if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     numberWords = data || {};
-    // If user previously edited words, merge saved values (localStorage overrides)
     const saved = localStorage.getItem("numberWords");
     if(saved){
       const savedObj = JSON.parse(saved);
@@ -25,7 +24,6 @@ async function loadNumberWords(){
     populateEditBlocks();
   } catch(err){
     console.error("Error loading numbers.json:", err);
-    // still attempt to populate selectors so UI isn't completely blank
     populateRangeSelectors();
     populateEditBlocks();
   }
@@ -33,14 +31,16 @@ async function loadNumberWords(){
 loadNumberWords();
 
 // ---------- Helpers ----------
-// Build range selectors (includes "0-9", "00-09", "10-19", ... "90-99")
 function populateRangeSelectors(){
   const seqSel = document.getElementById("sequenceRangeSelect");
   const flashSel = document.getElementById("flashRangeSelect");
   if(!seqSel || !flashSel) return;
-  const ranges = ["0-9","00-09"];
-  for(let i=10;i<=90;i+=10) ranges.push(`${i}-${i+9}`);
-  // fill selects
+
+  const ranges = ["ALL", "0-9", "00-09"];
+  for(let i=10;i<=90;i+=10) {
+    ranges.push(`${i}-${i+9}`);
+  }
+
   [seqSel, flashSel].forEach(sel=>{
     sel.innerHTML = "";
     ranges.forEach(r=>{
@@ -49,20 +49,23 @@ function populateRangeSelectors(){
       opt.textContent = r;
       sel.appendChild(opt);
     });
+    sel.value = "ALL"; // default to ALL
   });
 }
 
-// Create array of string keys matching JSON keys depending on option chosen.
-// For "0-9" -> ["0","1",...,"9"]
-// For "00-09" -> ["00","01",...,"09"]
-// For "10-19" -> ["10","11",...,"19"]
 function getSequencePool(selId){
   const sel = document.getElementById(selId);
   if(!sel) return [];
-  const [startRaw, endRaw] = sel.value.split("-");
+  const value = sel.value;
+  if(value === "ALL"){
+    const pool = [];
+    for(let i=0;i<=99;i++) pool.push(String(i).padStart(2,"0"));
+    return pool;
+  }
+  const [startRaw, endRaw] = value.split("-");
   const start = parseInt(startRaw,10);
   const end = parseInt(endRaw,10);
-  const usePadTwo = (startRaw.length > 1); // startRaw "00" or "10" (length 2) => true
+  const usePadTwo = (startRaw.length > 1);
   const pool = [];
   for(let i=start;i<=end;i++){
     pool.push(usePadTwo ? String(i).padStart(2,"0") : String(i));
@@ -70,7 +73,6 @@ function getSequencePool(selId){
   return pool;
 }
 
-// Random selection with either allowRepeats or noRepeats (refPool is mutated)
 function getRandomFromPool(pool, mode, refPool){
   if(!Array.isArray(pool) || pool.length===0) return null;
   if(mode === "allowRepeats") {
@@ -82,27 +84,27 @@ function getRandomFromPool(pool, mode, refPool){
   }
 }
 
-// Normalize input (keeps digits only), returns array of digits
 function normalizeInput(str){
   if(!str) return [];
   const digits = str.toString().replace(/\D/g,"").split("").map(d=>parseInt(d,10)).filter(n=>!Number.isNaN(n));
   return digits;
 }
 
-// Highlight mistakes helper (returns HTML string)
+// Always show correct sequence, mark your answers
 function highlightMistakes(inputArr, correctArr){
   let resultHTML = "";
-  const maxLen = Math.max(inputArr.length, correctArr.length);
-  for(let i=0;i<maxLen;i++){
-    const inp = (inputArr[i] !== undefined) ? inputArr[i] : "";
-    const cor = (correctArr[i] !== undefined) ? correctArr[i] : "";
-    if(String(inp) !== String(cor)) resultHTML += `<span class="incorrect">${inp}</span>`;
-    else resultHTML += `<span class="correct">${inp}</span>`;
+  for(let i=0;i<correctArr.length;i++){
+    const cor = correctArr[i];
+    const inp = inputArr[i];
+    if(String(inp) === String(cor)){
+      resultHTML += `<span class="correct">${cor}</span>`;
+    } else {
+      resultHTML += `<span class="incorrect">${cor}</span>`;
+    }
   }
   return resultHTML;
 }
 
-// Speak number (follows your original behavior)
 function speak(num){
   const voiceOn = document.getElementById("voiceCheck")?.checked;
   if(voiceOn && window.speechSynthesis){
@@ -111,13 +113,12 @@ function speak(num){
   }
 }
 
-// ---------- Edit Words (Section 2) ----------
+// ---------- Edit Words ----------
 function populateEditBlocks(){
   const container = document.getElementById("editWordsGroups");
   if(!container) return;
   container.innerHTML = "";
 
-  // Groups: 0-9 (single), 00-09 (double), then 10-19 ... 90-99
   const groups = [];
   groups.push({label:"Numbers 0-9", keys: Array.from({length:10},(_,i)=>String(i))});
   groups.push({label:"Numbers 00-09", keys: Array.from({length:10},(_,i)=>String(i).padStart(2,"0"))});
@@ -137,7 +138,6 @@ function populateEditBlocks(){
 
     const inner = document.createElement("div");
     group.keys.forEach(key=>{
-      // ensure object exists for this key so edits can be saved cleanly
       if(!numberWords[key]) numberWords[key] = { word: "", suggestions: [] };
 
       const label = document.createElement("label");
@@ -179,7 +179,6 @@ function populateEditBlocks(){
   });
 }
 
-// Export function
 function exportWords(){
   const blob = new Blob([JSON.stringify(numberWords, null, 2)], {type:"application/json"});
   const a = document.createElement("a");
@@ -192,7 +191,6 @@ document.getElementById("exportBtn")?.addEventListener("click", exportWords);
 // ---------- Section 1: Start Sequence ----------
 function startSequence(){
   if(document.getElementById("manualStart")?.checked) alert("Press OK when ready to begin.");
-  // clear inputs/results
   ["forwardInput","backwardInput","partialInputForward","partialInputBackward"].forEach(id=>{
     const el = document.getElementById(id); if(el) el.value = "";
   });
@@ -201,11 +199,11 @@ function startSequence(){
   });
   document.getElementById("flashDisplay").textContent = "";
 
-  const pool = getSequencePool("sequenceRangeSelect"); // array of keys (strings)
+  const pool = getSequencePool("sequenceRangeSelect");
   if(!pool || pool.length===0){ alert("Select numbers!"); return; }
   const count = Math.max(1, parseInt(document.getElementById("numCount")?.value || "1",10));
   lastSequence = [];
-  trainerRefPool = []; // reset trainer ref for no-repeat mode
+  trainerRefPool = [];
   const mode = document.getElementById("noRepeats")?.checked ? "noRepeats" : "allowRepeats";
   for(let i=0;i<count;i++){
     const numKey = getRandomFromPool(pool, mode, trainerRefPool);
@@ -217,11 +215,10 @@ function startSequence(){
   const pause = parseFloat(document.getElementById("pauseSlider")?.value || "3") * 1000;
   const flash = parseFloat(document.getElementById("flashSlider")?.value || "1") * 1000;
 
-  // show each number one at a time; still on same fixed display
   lastSequence.forEach((numKey, idx) => {
     setTimeout(()=>{
       const disp = document.getElementById("flashDisplay");
-      if(disp) disp.textContent = numKey; // show key string (e.g. "00" or "7")
+      if(disp) disp.textContent = numKey;
       setTimeout(()=>{
         if(disp) disp.textContent = "";
         speak(numKey);
@@ -231,33 +228,33 @@ function startSequence(){
 }
 
 // ---------- Check functions ----------
-// Forward
 function checkForward(){
   const inputArr = normalizeInput(document.getElementById("forwardInput")?.value || "");
   const correctArr = lastSequence.join('').split('').map(d=>parseInt(d,10));
-  document.getElementById("forwardResult").innerHTML = (inputArr.join('') === correctArr.join('')) ? "✅ Correct!" : highlightMistakes(inputArr,correctArr);
+  document.getElementById("forwardResult").innerHTML = 
+    (inputArr.join('') === correctArr.join('')) ? "✅ Correct!" : highlightMistakes(inputArr,correctArr);
 }
-// Backward (digit reversal)
 function checkBackward(){
   const inputArr = normalizeInput(document.getElementById("backwardInput")?.value || "");
   const correctArr = [...lastSequence.join('')].reverse().map(d=>parseInt(d,10));
-  document.getElementById("backwardResult").innerHTML = (inputArr.join('') === correctArr.join('')) ? "✅ Correct!" : highlightMistakes(inputArr,correctArr);
+  document.getElementById("backwardResult").innerHTML = 
+    (inputArr.join('') === correctArr.join('')) ? "✅ Correct!" : highlightMistakes(inputArr,correctArr);
 }
-// Partial forward
 function checkPartialForward(){
   const count = Math.max(1, parseInt(document.getElementById("partialCount")?.value || "1",10));
   const flatNumbers = history.slice(-count).flat();
   const inputArr = normalizeInput(document.getElementById("partialInputForward")?.value || "");
   const correctArr = flatNumbers.join('').split('').map(d=>parseInt(d,10));
-  document.getElementById("partialResultForward").innerHTML = (inputArr.join('') === correctArr.join('')) ? "✅ Correct!" : highlightMistakes(inputArr,correctArr);
+  document.getElementById("partialResultForward").innerHTML = 
+    (inputArr.join('') === correctArr.join('')) ? "✅ Correct!" : highlightMistakes(inputArr,correctArr);
 }
-// Partial backward
 function checkPartialBackward(){
   const count = Math.max(1, parseInt(document.getElementById("partialCount")?.value || "1",10));
   const flatNumbers = history.slice(-count).flat();
   const correctArr = [...flatNumbers.join('')].reverse().map(d=>parseInt(d,10));
   const inputArr = normalizeInput(document.getElementById("partialInputBackward")?.value || "");
-  document.getElementById("partialResultBackward").innerHTML = (inputArr.join('') === correctArr.join('')) ? "✅ Correct!" : highlightMistakes(inputArr,correctArr);
+  document.getElementById("partialResultBackward").innerHTML = 
+    (inputArr.join('') === correctArr.join('')) ? "✅ Correct!" : highlightMistakes(inputArr,correctArr);
 }
 function clearHistory(){
   history = [];
@@ -265,11 +262,10 @@ function clearHistory(){
   document.getElementById("partialResultBackward").innerText = "History cleared.";
 }
 
-// ---------- Flashing Practice Mode (Section 3) ----------
+// ---------- Flashing Practice ----------
 function showFlashingNext(){
-  const pool = getSequencePool("flashRangeSelect"); // keys (strings)
+  const pool = getSequencePool("flashRangeSelect");
   const mode = document.getElementById("flashNoRepeats")?.checked ? "noRepeats" : "allowRepeats";
-  // if range changed, reset flashRefPool so we don't mix across different ranges
   const currentRange = document.getElementById("flashRangeSelect")?.value;
   if(currentRange !== lastFlashRange){
     flashRefPool = [];
@@ -283,12 +279,9 @@ function showFlashingNext(){
 function startFlashing(){
   const speed = parseInt(document.getElementById("flashingSpeed")?.value || "2000",10);
   if(flashingInterval) clearInterval(flashingInterval);
-  // run immediately once, then set interval
   showFlashingNext();
   flashingInterval = setInterval(showFlashingNext, speed);
 }
-
-// toggle for flashing practice checkbox
 document.getElementById("flashingToggle")?.addEventListener("change", function(){
   if(this.checked){
     showFlashingNext();
@@ -311,7 +304,6 @@ document.getElementById("checkPartialForward")?.addEventListener("click", checkP
 document.getElementById("checkPartialBackward")?.addEventListener("click", checkPartialBackward);
 document.getElementById("clearHistory")?.addEventListener("click", clearHistory);
 
-// Enter key submit behavior for inputs
 ['forwardInput','backwardInput','partialInputForward','partialInputBackward'].forEach(id=>{
   const el = document.getElementById(id);
   if(!el) return;
